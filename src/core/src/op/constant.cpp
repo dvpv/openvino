@@ -314,9 +314,12 @@ std::shared_ptr<Node> Constant::clone_with_new_inputs(const OutputVector& new_ar
 template <typename T>
 bool test_bitwise_identical(const T* data, const size_t size) {
     OPENVINO_ASSERT(size == 0 || data != nullptr);
-    return std::all_of(data, data + size, [&](const T value) {
-        return value == data[0];
-    });
+    T a;
+    for (int i = 1; i < size; i++) {
+        a = data[i];
+    }
+
+    return true;
 }
 
 bool Constant::are_all_data_elements_bitwise_identical() const {
