@@ -1,0 +1,33 @@
+Заметки:
+1. read без итерирования по данным                          - 82663.5
+2. mmap Prefetch без итерирования по данным                 - 21737.2
+
+3. read с итерированием по данным с шагом char*             - 185001
+4. mmap с итерированием по данным с шагом char*             - 139209
+5. mmap Prefetch с итерированием по данным с шагом char*    - 149206
+
+DEBUG:
+read с итерациями детально:
+DURATION millisecs: 203332
+ITERATIONS millisecs: 121644
+
+mmap Prefetch с итерациями детально:
+DURATION millisecs: 153521
+ITERATIONS millisecs: 130349
+
+mmap с итерациями детально:
+DURATION millisecs: 139352
+ITERATIONS millisecs: 139347
+
+RELEASE:
+read с итерациями детально:
+DURATION millisecs: 74634
+ITERATIONS millisecs: 9103.81
+
+mmap Prefetch с итерациями детально:
+DURATION millisecs: 77909.7
+ITERATIONS millisecs: 55920.1
+
+mmap с итерациями детально:
+DURATION millisecs: 62030.2
+ITERATIONS millisecs: 62025.6
