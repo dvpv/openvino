@@ -176,6 +176,16 @@ LevelZeroCompilerAdapter::LevelZeroCompilerAdapter() : _logger("LevelZeroCompile
     }
 }
 
+Version LevelZeroCompilerAdapter::getELFVersion(const Config& config) const {
+    // TODO(dvpv): impl
+    return {};
+}
+
+Version LevelZeroCompilerAdapter::getStaticMIVersion(const Config& config) const {
+    // TODO(dvpv): impl
+    return {};
+}
+
 uint32_t LevelZeroCompilerAdapter::getSupportedOpsetVersion() const {
     return apiAdapter->getSupportedOpset();
 }

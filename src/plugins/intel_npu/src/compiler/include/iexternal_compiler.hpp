@@ -22,6 +22,18 @@ public:
     virtual ~IExternalCompiler() = default;
 
     /**
+     * @brief Get ABI Version of current HPI/Loader
+     * @return a Version structure
+     */
+    virtual Version getELFVersion(const Config& config) const = 0;
+
+    /**
+     * @brief Get Mapped inference version
+     * @return a Version structure
+     */
+    virtual Version getStaticMIVersion(const Config& config) const = 0;
+
+    /**
      * @brief Get opset supported by compiler
      */
     virtual uint32_t getSupportedOpset() const = 0;

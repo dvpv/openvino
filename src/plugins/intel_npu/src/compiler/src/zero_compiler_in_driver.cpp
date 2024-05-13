@@ -820,6 +820,22 @@ NetworkMetadata LevelZeroCompilerInDriver<TableExtension>::parseBlob(const std::
 }
 
 template <typename TableExtension>
+Version LevelZeroCompilerInDriver<TableExtension>::getELFVersion(const Config& config) const {
+    // TODO(dvpv): impl
+    // UMD call here
+    // Translate to intel_npu Version here
+    return {};
+}
+
+template <typename TableExtension>
+Version LevelZeroCompilerInDriver<TableExtension>::getStaticMIVersion(const Config& config) const {
+    // TODO(dvpv): impl
+    // UMD call here
+    // Translate to intel_npu Version here
+    return {};
+}
+
+template <typename TableExtension>
 uint32_t LevelZeroCompilerInDriver<TableExtension>::getSupportedOpset() const {
     _logger.debug("getSupportedOpset");
     ze_device_graph_properties_t graphProperties;

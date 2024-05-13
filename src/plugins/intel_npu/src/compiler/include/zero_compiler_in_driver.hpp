@@ -47,6 +47,9 @@ public:
     LevelZeroCompilerInDriver& operator=(const LevelZeroCompilerInDriver&) = delete;
     ~LevelZeroCompilerInDriver() override;
 
+    Version getELFVersion(const Config& config) const final;
+    Version getStaticMIVersion(const Config& config) const final;
+
     uint32_t getSupportedOpset() const override;
 
     std::unordered_set<std::string> getQueryResult(IR& irModel, const Config& config) const override;
