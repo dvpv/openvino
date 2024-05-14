@@ -76,6 +76,15 @@ std::shared_ptr<IExecutor> ZeroDevice::createExecutor(
     return std::make_shared<ZeroExecutor>(_initStructs, networkDescription, config, _group_ordinal);
 }
 
+Version ZeroDevice::getELFVersion() const {
+    _graph_ddi_table_ext->pfnDeviceGetGraphProperties;
+    return {};
+}
+
+Version ZeroDevice::getStaticMIVersion() const {
+    return {};
+}
+
 std::string ZeroDevice::getName() const {
 //    KMD is setting usDeviceID from VpuFamilyID.h
 #define NPU_3700_DEVICE_ID   0x6240

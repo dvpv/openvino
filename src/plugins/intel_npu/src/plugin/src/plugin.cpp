@@ -19,6 +19,7 @@
 #include "openvino/op/constant.hpp"
 #include "openvino/op/parameter.hpp"
 #include "openvino/runtime/intel_npu/properties.hpp"
+#include "openvino/runtime/properties.hpp"
 
 using namespace intel_npu;
 
@@ -490,7 +491,7 @@ Plugin::Plugin()
     }
 
     const auto cip = createCompiler(ov::intel_npu::CompilerType::MLIR, _logger);
-    const auto cid = createCompiler(ov::intel_npu::CompilerType::DRIVER, _logger);
+    const auto driver = createCompiler(ov::intel_npu::CompilerType::DRIVER, _logger);
     const auto device = _backends->getDevice();
     if (device != nullptr) {
         const auto platform = device->getName();
@@ -501,27 +502,27 @@ Plugin::Plugin()
 
             const Version cipElfVersion = cip->getELFVersion(config);
             const Version cipMIVersion = cip->getStaticMIVersion(config);
-            const Version cidElfVersion = cid->getELFVersion(config);
-            const Version cidMIVersion = cid->getStaticMIVersion(config);
+            const Version driverElfVersion = driver->getELFVersion(config);
+            const Version driverMIVersion = driver->getStaticMIVersion(config);
 
-            if (!cidElfVersion.isCompatible(cipElfVersion)) {
+            if (!driverElfVersion.isCompatible(cipElfVersion)) {
                 _logger.info("Driver ELF Version: %d.%d.%d is incompatible with Plugin ELF Version: %d.%d.%d, "
                              "will default to Driver Compiler",
-                             cidElfVersion.major,
-                             cidElfVersion.minor,
-                             cidElfVersion.patch,
+                             driverElfVersion.major,
+                             driverElfVersion.minor,
+                             driverElfVersion.patch,
                              cipElfVersion.major,
                              cipElfVersion.minor,
                              cipElfVersion.patch);
                 std::stringstream strStream;
                 strStream << ov::intel_npu::CompilerType::DRIVER;
                 _globalConfig.update({{std::string(ov::intel_npu::compiler_type.name()), strStream.str()}});
-            } else if (!cidMIVersion.isCompatible(cipMIVersion)) {
+            } else if (!driverMIVersion.isCompatible(cipMIVersion)) {
                 _logger.info("Driver MI Version: %d.%d.%d is incompatible with Plugin MI Version: %d.%d.%d, "
                              "will default to Driver Compiler",
-                             cidMIVersion.major,
-                             cidMIVersion.minor,
-                             cidMIVersion.patch,
+                             driverMIVersion.major,
+                             driverMIVersion.minor,
+                             driverMIVersion.patch,
                              cipMIVersion.major,
                              cipMIVersion.minor,
                              cipMIVersion.patch);

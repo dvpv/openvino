@@ -8,6 +8,7 @@
 #include <ze_graph_ext.h>
 
 #include "intel_npu/al/icompiled_model.hpp"
+#include "intel_npu/al/icompiler.hpp"
 #include "intel_npu/utils/logger/logger.hpp"
 #include "npu.hpp"
 #include "zero_init.hpp"
@@ -22,6 +23,8 @@ public:
     std::shared_ptr<IExecutor> createExecutor(const std::shared_ptr<const NetworkDescription>& networkDescription,
                                               const Config& config) override;
 
+    Version getELFVersion() const override;
+    Version getStaticMIVersion() const override;
     std::string getName() const override;
     std::string getFullDeviceName() const override;
     Uuid getUuid() const override;
