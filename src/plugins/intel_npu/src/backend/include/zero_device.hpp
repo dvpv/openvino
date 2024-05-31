@@ -8,16 +8,21 @@
 #include <ze_graph_ext.h>
 
 #include "intel_npu/al/icompiled_model.hpp"
+#include "intel_npu/al/icompiler.hpp"
 #include "intel_npu/utils/logger/logger.hpp"
 #include "npu.hpp"
 #include "zero_init.hpp"
 #include "zero_types.hpp"
 #include "zero_utils.hpp"
+
 namespace intel_npu {
 
 class ZeroDevice : public IDevice {
 public:
     ZeroDevice(const std::shared_ptr<ZeroInitStructsHolder>& initStructs);
+
+    std::optional<ov::intel_npu::Version> getLibraryELFVersion() const override;
+    std::optional<ov::intel_npu::Version> getLibraryMIVersion() const override;
 
     std::shared_ptr<IExecutor> createExecutor(const std::shared_ptr<const NetworkDescription>& networkDescription,
                                               const Config& config) override;
@@ -45,6 +50,7 @@ private:
     ze_graph_dditable_ext_curr_t* _graph_ddi_table_ext = nullptr;
 
     ze_device_properties_t device_properties = {};
+    ze_device_graph_properties_2_t graph_properties = {};
 
     ze_pci_ext_properties_t pci_properties = {};
 

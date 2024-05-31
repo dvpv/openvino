@@ -5,6 +5,7 @@
 #include "plugin.hpp"
 
 #include <fstream>
+#include <sstream>
 
 #include "compiled_model.hpp"
 #include "compiler.hpp"
@@ -13,9 +14,12 @@
 #include "intel_npu/al/config/compiler.hpp"
 #include "intel_npu/al/config/runtime.hpp"
 #include "intel_npu/al/itt.hpp"
+#include "npu_private_properties.hpp"
+#include "openvino/core/any.hpp"
 #include "openvino/op/constant.hpp"
 #include "openvino/op/parameter.hpp"
 #include "openvino/runtime/intel_npu/properties.hpp"
+#include "openvino/runtime/properties.hpp"
 
 using namespace intel_npu;
 
@@ -484,12 +488,85 @@ Plugin::Plugin()
           [](const Config& config) {
               return config.getString<BATCH_MODE>();
           }}},
+        {ov::intel_npu::driver_elf_format_version.name(),
+         {false,
+          ov::PropertyMutability::RO,
+          [](const Config& config) {
+              return config.getString<DRIVER_ELF_FORMAT_VERSION>();
+          }}},
+        {ov::intel_npu::driver_mi_version.name(),
+         {false,
+          ov::PropertyMutability::RO,
+          [](const Config& config) {
+              return config.getString<DRIVER_MI_VERSION>();
+          }}},
     };
 
     for (auto& property : _properties) {
         if (std::get<0>(property.second)) {
             _supportedProperties.emplace_back(ov::PropertyName(property.first, std::get<1>(property.second)));
         }
+    }
+
+    checkForCompilerFallback();
+}
+
+void Plugin::checkForCompilerFallback() {
+    auto setDefaultCompilerType = [&](const ov::intel_npu::CompilerType compilerType) {
+        std::stringstream strStream;
+        strStream << compilerType;
+        _globalConfig.update({{std::string(ov::intel_npu::compiler_type.name()), strStream.str()}});
+    };
+
+    // The driver versions are fetched from zero device
+    const auto device = _backends->getDevice();
+    if (device == nullptr) {
+        return;
+    }
+
+    const std::optional<ov::intel_npu::Version> driverElfVersion = device->getLibraryELFVersion();
+    const std::optional<ov::intel_npu::Version> driverMIVersion = device->getLibraryMIVersion();
+
+    if (!(driverElfVersion && driverMIVersion)) {
+        // The current driver version doesn't have versions API
+
+        // Check if CID fallback is required
+        if (_backends->isCompilerFallbackRequired()) {
+            _logger.info("Driver Version is too old to use MLIR Compiler. "
+                         "Driver Compiler will be set as default compiler type.");
+            setDefaultCompilerType(ov::intel_npu::CompilerType::DRIVER);
+            return;
+        } else {
+            // Driver version is supported, CID fallback is not needed
+            return;
+        }
+    }
+
+    std::stringstream strStream;
+    strStream << driverElfVersion.value();
+    _globalConfig.update({{std::string(ov::intel_npu::driver_elf_format_version.name()), strStream.str()}});
+    strStream.str("");
+    strStream << driverMIVersion.value();
+    _globalConfig.update({{std::string(ov::intel_npu::driver_mi_version.name()), strStream.str()}});
+
+    // CIP ELF and MI versions depend on the platform, so we need to fetch the native platform of the device.
+    const auto platform = device->getName();
+
+    if (platform == ov::intel_npu::Platform::AUTO_DETECT) {
+        _logger.info("Default compiler type set to Driver compiler");
+        setDefaultCompilerType(ov::intel_npu::CompilerType::DRIVER);
+        return;
+    }
+
+    // A local config is needed to make the platform available to the compiler.
+    std::map<std::string, std::string> platformConfig{{std::string(ov::intel_npu::platform.name()), platform}};
+    const Config config = merge_configs(_globalConfig, platformConfig);
+
+    // Compare CIP and Driver versions for ELF and MI
+    const auto compiler = createCompiler(ov::intel_npu::CompilerType::MLIR, _logger);
+
+    if (!compiler->isCompatibleWithDriverVersion(config)) {
+        setDefaultCompilerType(ov::intel_npu::CompilerType::DRIVER);
     }
 }
 
@@ -562,7 +639,8 @@ std::shared_ptr<ov::ICompiledModel> Plugin::compile_model(const std::shared_ptr<
 
     // Update stepping w/ information from driver, unless provided by user or we are off-device
     // Ignore, if compilation was requested for platform, different from current
-    if (!localConfig.has<STEPPING>() && device != nullptr && device->getName() == ov::intel_npu::Platform::standardize(platform)) {
+    if (!localConfig.has<STEPPING>() && device != nullptr &&
+        device->getName() == ov::intel_npu::Platform::standardize(platform)) {
         try {
             localConfig.update({{ov::intel_npu::stepping.name(), std::to_string(device->getSubDevId())}});
         } catch (...) {
@@ -572,7 +650,8 @@ std::shared_ptr<ov::ICompiledModel> Plugin::compile_model(const std::shared_ptr<
     }
     // Update max_tiles w/ information from driver, unless provided by user or we are off-device
     // Ignore, if compilation was requested for platform, different from current
-    if (!localConfig.has<MAX_TILES>() && device != nullptr && device->getName() == ov::intel_npu::Platform::standardize(platform)) {
+    if (!localConfig.has<MAX_TILES>() && device != nullptr &&
+        device->getName() == ov::intel_npu::Platform::standardize(platform)) {
         try {
             localConfig.update({{ov::intel_npu::max_tiles.name(), std::to_string(device->getMaxNumSlices())}});
         } catch (...) {
